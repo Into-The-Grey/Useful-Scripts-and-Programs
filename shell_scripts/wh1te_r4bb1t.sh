@@ -26,14 +26,18 @@ check_go_version() {
     wget -q https://go.dev/dl/go1.24.5.linux-arm64.tar.gz -O /tmp/go1.24.5.linux-arm64.tar.gz
     sudo rm -rf /usr/local/go
     sudo tar -C /usr/local -xzf /tmp/go1.24.5.linux-arm64.tar.gz
-    echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> ~/.bashrc
+    if ! grep -Fxq 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' ~/.bashrc; then
+      echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> ~/.bashrc
+    fi
     export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
     ok "Go upgraded to: $(go version)"
   else
     ok "Go version is up to date: $GOV"
   fi
 }
-check_go_version
+if ! grep -Fxq 'export PATH="$HOME/.local/bin:$HOME/go/bin:/usr/local/go/bin:$PATH"' ~/.bashrc; then
+  echo 'export PATH="$HOME/.local/bin:$HOME/go/bin:/usr/local/go/bin:$PATH"' >> ~/.bashrc
+fi
 
 echo 'export PATH="$HOME/.local/bin:$HOME/go/bin:/usr/local/go/bin:$PATH"' >> ~/.bashrc
 export PATH="$HOME/.local/bin:$HOME/go/bin:/usr/local/go/bin:$PATH"
@@ -89,12 +93,9 @@ if [ ! -f "$BASE/recon/dirbuster/DirBuster-1.0-RC1.jar" ]; then
   cd "$BASE/recon/dirbuster"
   wget https://downloads.sourceforge.net/project/dirbuster/DirBuster%20%28jar%20%2B%20lists%29/1.0-RC1/DirBuster-1.0-RC1.tar.bz2 -O DirBuster-1.0-RC1.tar.bz2
   tar xjf DirBuster-1.0-RC1.tar.bz2
-  rm DirBuster-1.0-RC1.tar.bz2
-fi
-echo -e '#!/usr/bin/env bash\nexec java -jar "$HOME/pentoolbox/recon/dirbuster/DirBuster-1.0-RC1.jar" "$@"' > "$HOME/.local/bin/dirbuster"
+# Create launcher wrapper for DirBuster using $BASE
+echo -e '#!/usr/bin/env bash\nexec java -jar "$BASE/recon/dirbuster/DirBuster-1.0-RC1.jar" "$@"' > "$HOME/.local/bin/dirbuster"
 chmod +x "$HOME/.local/bin/dirbuster"
-
-# Create launcher wrapper
 echo -e '#!/usr/bin/env bash\nexec java -jar "$BASE/recon/dirbuster/DirBuster-1.0-RC1.jar" "$@"' > "$HOME/.local/bin/dirbuster"
 chmod +x "$HOME/.local/bin/dirbuster"
 
@@ -217,6 +218,7 @@ for alias_line in "${ALIASES[@]}"; do
 done
 
 # ========== 8. Status Table (all tools, by folder) ==========
+export PATH="$HOME/.local/bin:$PATH"
 echo -e "\n${YELLOW}========= Pentoolbox Status =========${NC}"
 printf "%-18s %-12s %-32s\n" "Tool" "Status" "Path"
 for t in theHarvester subfinder nuclei amass recon-ng dirbuster whois john hydra nmap tcpdump netcat httpx Responder metasploit wireshark tshark aircrack-ng airmon-ng airodump-ng aireplay-ng hcxdumptool hcxpcapngtool hcxhashtool hcxcaptool hcxpmkidtool wifite; do
@@ -227,5 +229,5 @@ for t in theHarvester subfinder nuclei amass recon-ng dirbuster whois john hydra
     printf "%-18s ${RED}%-12s${NC} %-32s\n" "$t" "FAIL" ""
   fi
 done
-
+ok "All tools installed, categorized, and symlinked in \$HOME/.local/bin and \$HOME/pentoolbox. You may need to start a new shell session for PATH and aliases to take effect."
 ok "All tools installed, categorized, and symlinked in \$HOME/.local/bin and \$HOME/pentoolbox."
